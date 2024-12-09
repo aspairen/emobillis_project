@@ -34,6 +34,7 @@ AUTH_USER_MODEL = 'accounts.User'
 # Application definition
 
 INSTALLED_APPS = [
+    'mpesa',
     'drf_yasg',
     'django.contrib.admin',
     'django.contrib.auth',

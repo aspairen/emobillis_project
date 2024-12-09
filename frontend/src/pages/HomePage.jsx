@@ -6,7 +6,7 @@ import ProductList from './../components/ProductList';
 const HomePage = () => {
     return (
         <div >            
-            <HeroSection />
+            <HeroSection />            
             <Categories />
             <ProductList />
                         

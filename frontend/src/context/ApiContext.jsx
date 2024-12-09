@@ -38,14 +38,38 @@ const ApiProvider = ({ children }) => {
     return apiCall("get", `/shop/products/${id}/`);
   };
 
+  // const createOrder = async (orderData) => {
+  //   const token = localStorage.getItem("authToken"); // Adjust based on where you store the token
+  
+  //   const response = await fetch(`${baseURL}/shop/orders/`, {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Token ${token}`, // Include the user's token
+  //     },
+  //     body: JSON.stringify(orderData),
+  //   });
+  
+  //   if (!response.ok) {
+  //     throw new Error("Failed to create order");
+  //   }
+  
+  //   return response.json();
+  // };
+  
   const createOrder = async (orderData) => {
-    const token = localStorage.getItem("authToken"); // Adjust based on where you store the token
+    const token = JSON.parse(localStorage.getItem("authToken")); // Parse token from string
+    console.log("Retrieved Token:", token); // Debugging to check if token is retrieved correctly
+  
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
   
     const response = await fetch(`${baseURL}/shop/orders/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Token ${token}`, // Include the user's token
+        Authorization: `Bearer ${token}`, // Ensure proper token format
       },
       body: JSON.stringify(orderData),
     });
@@ -57,9 +81,6 @@ const ApiProvider = ({ children }) => {
     return response.json();
   };
   
-  // const createOrder = async (orderData) => {
-  //   return apiCall("post", "/shop/orders/", orderData);
-  // };
 
   const getOrder = async (id) => {
     return apiCall("get", `/shop/orders/${id}/`);

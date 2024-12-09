@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.db.models import Q
 
 class Category(models.Model):
     """
@@ -52,6 +53,37 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @staticmethod
+    def search(query=None, category=None, min_price=None, max_price=None, in_stock=None):
+        
+        products = Product.objects.all()
+
+        # Text search
+        if query:
+            products = products.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            )
+        # Category filter
+        if category:
+            if isinstance(category, int):
+                products = products.filter(category_id=category)
+            elif isinstance(category, str):
+                products = products.filter(category__name__icontains=category)
+
+        # Price range filter
+        if min_price is not None:
+            products = products.filter(category_id=category)
+        elif isinstance(category, str):
+            products = products.filter(price__lte=max_price)
+
+
+        # Stock filter
+        if in_stock is not None:
+            products = products.filter(stock__gt=0) if in_stock else products.filter(stock__lte=0)
+
+
+        return products
+            
     class Meta:
         ordering = ['name']
 

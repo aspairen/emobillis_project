@@ -1,11 +1,14 @@
-// eslint-disable-next-line no-unused-vars
-import React, { useState } from "react";
+/* eslint-disable no-unused-vars */
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { AuthContext, AuthProvider} from "../context/AuthContext";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { login } = useContext(AuthContext); // Use login from context
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -19,23 +22,18 @@ const LoginPage = () => {
     setError(null);
 
     try {
-      const response = await fetch("/api/token-auth/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/auth/login/",
+        formData
+      );
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("authToken", data.token); // Save the token
-        navigate("/"); // Redirect to the homepage or dashboard
-      } else {
-        const errorData = await response.json();
-        setError(errorData.non_field_errors || "Invalid credentials");
+      if (response.status === 200) {
+        const { token } = response.data;
+        login(token); // Call the context's login function
+        navigate("/"); // Redirect after login
       }
-    // eslint-disable-next-line no-unused-vars
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      setError(err.response?.data?.detail || "Invalid credentials");
     } finally {
       setLoading(false);
     }
@@ -53,7 +51,7 @@ const LoginPage = () => {
           <input
             type="text"
             id="username"
-            name="username"
+            name="username" 
             className="form-control"
             value={formData.username}
             onChange={handleInputChange}
@@ -76,7 +74,7 @@ const LoginPage = () => {
         </div>
         <button
           type="submit"
-          className="btn btn-primary"
+          className="btn btn-primary w-100"
           disabled={loading}
         >
           {loading ? "Logging in..." : "Login"}

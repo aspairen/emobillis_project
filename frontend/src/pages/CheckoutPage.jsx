@@ -1,100 +1,14 @@
-// import { useState } from "react";
-// import { useCart } from "../context/CartContext";
-// import { useApi } from "../context/ApiContext";
-// const CheckoutPage = () => {
-//   const {cart, calculateTotalPrice, clearCart} = useCart();
-//   const [formData, setFormData] = useState({
-//     name: "",
-//     address: "",
-//     email: "",
-//   });
-
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData({ ...formData, [name]: value });
-//   };
-
-//   const handleCheckout = (e) => {
-//     e.preventDefault();
-//     console.log("Order Submitted", { formData, cart });
-//     clearCart(); // Clear the cart after checkout
-//     alert("Order placed successfully!");
-//   };
-
-//   return (
-//     <div className="container my-4">
-//       <h1 className="text-center">Checkout</h1>
-//       <div className="row">
-//         <div className="col-md-6">
-//           <h3>Order Summary</h3>
-//           <ul className="list-group">
-//             {cart.map((item) => (
-//               <li key={item.id} className="list-group-item">
-//                 {item.name} - ${item.price.toFixed(2)} x {item.quantity} = ${(item.price * item.quantity).toFixed(2)}
-//               </li>
-//             ))}
-//           </ul>
-//           <h4 className="mt-3">
-//             Total: ${calculateTotalPrice().toFixed(2)}
-//           </h4>
-//         </div>
-//         <div className="col-md-6">
-//           <h3>Shipping Details</h3>
-//           <form action="" onSubmit={handleCheckout}>
-//             <div className="mb-3">
-//               <label className="form-label">Name</label>
-//               <input 
-//               type="text"
-//               className="from-control" 
-//               name="name"
-//               value={FormDataEvent.name}
-//               onChange={handleInputChange}
-//               required
-//               />
-//             </div>
-//             <div className="mb-3">
-//               <label className="form-label">Address</label>
-//               <textarea
-//                 className="form-control"
-//                 name="address" 
-//                 value={formData.address}
-//                 onChange={handleInputChange}
-//                 required
-//                 ></textarea>
-//             </div>
-//             <div className="mb-3">
-//               <label  className="form-label">Email</label>
-//               <input 
-//                 type="text" 
-//                 className="form-control"
-//                 name="email" 
-//                 value={formData.email}
-//                 onChange={handleInputChange}
-//                 required
-//                  />
-//             </div>
-//             <button type="submit" className="btn btn-success">Place Order</button>
-//           </form>
-//         </div>
-
-//       </div>
-//     </div>
-//   )
-// } 
-
-// export default CheckoutPage;
-
-
-
-
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useCart } from "../context/CartContext";
 import { useApi } from "../context/ApiContext";
+import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import Checkout from "../components/Checkout";
 
 const CheckoutPage = () => {
   const { cart, clearCart } = useCart();
   const { createOrder } = useApi();
+  const { user, authToken } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -121,28 +35,37 @@ const CheckoutPage = () => {
     setLoading(true);
     setError(null);
 
+    if (!authToken || !user) {
+      setError("You must be logged in to place an order.");
+      setLoading(false);
+      navigate("/login");
+      return;
+    }
+
     const orderData = {
-      user: 1, // Replace with dynamic user ID
+      user: user.id,
       total_price: calculateTotalPrice(),
       items: cart.map((item) => ({
         product: item.id,
         quantity: item.quantity,
         price: item.price,
       })),
-      shipping_details: formData, // Include form data in order
+      shipping_details: formData,
     };
 
     try {
-      await createOrder(orderData); // Use ApiContext's createOrder
-      clearCart(); // Clear the cart after successful order submission
+      await createOrder(orderData);
+      clearCart();
       navigate("/thank-you");
-    // eslint-disable-next-line no-unused-vars
     } catch (err) {
+      console.error("Order submission error:", err);
       setError("Failed to submit the order. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
+  const totalAmount = calculateTotalPrice();
 
   return (
     <div className="container my-4">
@@ -160,7 +83,7 @@ const CheckoutPage = () => {
               </li>
             ))}
           </ul>
-          <h4 className="mt-3">Total: ${calculateTotalPrice().toFixed(2)}</h4>
+          <h4 className="mt-3">Total: ${totalAmount.toFixed(2)}</h4>
         </div>
         <div className="col-md-6">
           <h3>Shipping Details</h3>
@@ -202,6 +125,15 @@ const CheckoutPage = () => {
             </button>
           </form>
         </div>
+      </div>
+      <div className="mt-4">
+        <h3>Complete Payment</h3>
+        <Checkout
+          orderId="TEMP_ORDER_ID"
+          totalAmount={totalAmount}
+          userPhoneNumber={formData.phone || user?.phone || "254712345678"}
+          authToken={authToken}
+        />
       </div>
     </div>
   );

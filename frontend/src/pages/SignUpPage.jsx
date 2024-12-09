@@ -7,6 +7,7 @@ const SignUpPage = () => {
     username: "",
     email: "",
     password: "",
+    confirmPassword: "",
     first_name: "",
     last_name: "",
   });
@@ -19,19 +20,24 @@ const SignUpPage = () => {
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validateForm = () => {
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return false;
+    }
+    return true;
+  };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
-    if (!validateEmail(formData.email)) {
-      setError("Please enter a valid email address.");
+  
+    if (!validateForm()) {
       setLoading(false);
       return;
     }
-
+  
     try {
       const response = await fetch(
         "http://127.0.0.1:8000/api/accounts/register/",
@@ -41,38 +47,24 @@ const SignUpPage = () => {
           body: JSON.stringify(formData),
         }
       );
-
+  
+      const responseData = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
-        if (data.token) {
-          localStorage.setItem("authToken", data.token);
-          alert("Registration successful! Redirecting to the homepage...");
-          navigate("/");
-        } else {
-          alert("Registration successful! Please log in to continue.");
-          navigate("/login");
-        }
+        alert("Registration successful! Redirecting to login...");
+        navigate("/login");
       } else {
-        const errorData = await response.json();
-        if (response.status === 400) {
-          const fieldErrors = Object.entries(errorData).map(
-            ([field, messages]) => `${field}: ${messages.join(", ")}`
-          );
-          setError(fieldErrors.join("; "));
-        } else {
-          setError(
-            errorData.non_field_errors ||
-              errorData.detail ||
-              "Registration failed. Please check your input."
-          );
-        }
+        console.error("Registration error:", responseData);
+        setError(responseData.detail || "Registration failed. Please try again.");
       }
     } catch (err) {
+      console.error("An unexpected error occurred:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="container-fluid vh-100 d-flex align-items-center justify-content-center">
@@ -106,6 +98,28 @@ const SignUpPage = () => {
                   />
                 </div>
                 <div className="mb-3">
+                  <label className="form-label">First Name</label>
+                  <input
+                    type="text"
+                    name="first_name"
+                    className="form-control"
+                    value={formData.first_name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Last Name</label>
+                  <input
+                    type="text"
+                    name="last_name"
+                    className="form-control"
+                    value={formData.last_name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="mb-3">
                   <label className="form-label">Password</label>
                   <input
                     type="password"
@@ -117,23 +131,14 @@ const SignUpPage = () => {
                   />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">First Name</label>
+                  <label className="form-label">Confirm Password</label>
                   <input
-                    type="text"
-                    name="first_name"
+                    type="password"
+                    name="confirmPassword"
                     className="form-control"
-                    value={formData.first_name}
+                    value={formData.confirmPassword}
                     onChange={handleInputChange}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Last Name</label>
-                  <input
-                    type="text"
-                    name="last_name"
-                    className="form-control"
-                    value={formData.last_name}
-                    onChange={handleInputChange}
+                    required
                   />
                 </div>
                 <button

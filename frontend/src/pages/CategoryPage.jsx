@@ -37,6 +37,13 @@ const CategoryPage = () => {
   }
 
   return (
+    <div className="container my-5"> <h2 className="text-center fw-bold mb-4">{category.name}</h2> <p className="text-center text-muted">{category.description}</p> <div className="row g-4"> {products.map((product) => { const price = typeof product.price === 'number' ? product.price : 0.00; return ( <div className="col-md-4" key={product.id}> <div className="card border-0 shadow h-100"> <img src={product.image || "https://via.placeholder.com/400x250"} className="card-img-top" alt={product.name} style={{ height: "250px", objectFit: "cover" }} /> <div className="card-body d-flex flex-column"> <h5 className="card-title">{product.name}</h5> <p className="card-text text-muted flex-grow-1">{product.description}</p> <p className="card-text fw-bold text-success">${price.toFixed(2)}</p> <a href={`/product/${product.id}`} className="btn btn-primary"> View Details </a> </div> </div> </div> ); })} </div> </div>
+  );
+};
+
+export default CategoryPage;
+/**
+ * 
     <div className="container my-5">
       <h2 className="text-center fw-bold mb-4">{category.name}</h2>
       <p className="text-center text-muted">{category.description}</p>
@@ -64,7 +71,4 @@ const CategoryPage = () => {
         ))}
       </div>
     </div>
-  );
-};
-
-export default CategoryPage;
+ */

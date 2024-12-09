@@ -11,10 +11,11 @@ import Footer from './../src/components/Footer'
 import ApiProvider from './context/ApiContext';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
-
+import { AuthProvider } from "./context/AuthContext"; 
 const App = () => {  
     return (
       <ApiProvider>
+      <AuthProvider>
       <CartProvider>
       <Router>
         <Navbar />
@@ -31,6 +32,7 @@ const App = () => {
         <Footer />
       </Router>
       </CartProvider>
+      </AuthProvider>
       </ApiProvider>
     )
 };
