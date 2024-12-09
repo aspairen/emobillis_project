@@ -1,14 +1,10 @@
-import { useState, useContext } from "react";
-import { useCart } from "../context/CartContext";
-import { useApi } from "../context/ApiContext";
-import { AuthContext } from "../context/AuthContext";
+// 
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Checkout from "../components/Checkout";
 
 const CheckoutPage = () => {
-  const { cart, clearCart } = useCart();
-  const { createOrder } = useApi();
-  const { user, authToken } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -18,15 +14,60 @@ const CheckoutPage = () => {
     email: "",
   });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+  // Local state for user and token
+  const [user, setUser] = useState(null);
+  const [authToken, setAuthToken] = useState(() => {
+    try {
+      const token = localStorage.getItem("authToken");
+      return token ? JSON.parse(token) : null;
+    } catch (e) {
+      console.error("Error parsing authToken from localStorage:", e);
+      return null;
+    }
+  });
+
+  const isTokenExpired = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1])); // Decode JWT payload
+      return payload.exp * 1000 < Date.now(); // Expiry check
+    } catch (e) {
+      console.error("Error decoding token:", e);
+      return true; // Expired if decoding fails
+    }
+  };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (authToken && !isTokenExpired(authToken)) {
+        try {
+          const response = await axios.get("http://127.0.0.1:8000/api/auth/profile/", {
+            headers: { Authorization: `Bearer ${authToken}` },
+          });
+          setUser(response.data);
+        } catch (error) {
+          console.error("Failed to fetch user:", error);
+          logout(); // Clear invalid token
+        }
+      } else {
+        setUser(null);
+        logout(); // Logout if token is expired
+      }
+    };
+
+    fetchUser();
+  }, [authToken]);
+
+  const logout = () => {
+    localStorage.removeItem("authToken");
+    setAuthToken(null);
+    setUser(null);
   };
 
   const calculateTotalPrice = () => {
+    const cart = [
+      { id: 1, name: "Product A", price: 10.99, quantity: 2 },
+      { id: 2, name: "Product B", price: 25.49, quantity: 1 },
+    ]; // Replace with your actual cart logic
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
@@ -45,17 +86,18 @@ const CheckoutPage = () => {
     const orderData = {
       user: user.id,
       total_price: calculateTotalPrice(),
-      items: cart.map((item) => ({
-        product: item.id,
-        quantity: item.quantity,
-        price: item.price,
-      })),
+      items: [
+        { product: 1, quantity: 2, price: 10.99 },
+        { product: 2, quantity: 1, price: 25.49 },
+      ], // Replace with actual cart items
       shipping_details: formData,
     };
-
+    console.log("Order Data: ", orderData)
     try {
-      await createOrder(orderData);
-      clearCart();
+      const response = await axios.post("http://127.0.0.1:8000/api/shop/orders/", orderData, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      console.log("Order placed:", response.data);
       navigate("/thank-you");
     } catch (err) {
       console.error("Order submission error:", err);
@@ -64,8 +106,6 @@ const CheckoutPage = () => {
       setLoading(false);
     }
   };
-
-  const totalAmount = calculateTotalPrice();
 
   return (
     <div className="container my-4">
@@ -76,14 +116,10 @@ const CheckoutPage = () => {
         <div className="col-md-6">
           <h3>Order Summary</h3>
           <ul className="list-group">
-            {cart.map((item) => (
-              <li key={item.id} className="list-group-item">
-                {item.name} - ${item.price.toFixed(2)} x {item.quantity} = $
-                {(item.price * item.quantity).toFixed(2)}
-              </li>
-            ))}
+            <li className="list-group-item">Product A - $10.99 x 2 = $21.98</li>
+            <li className="list-group-item">Product B - $25.49 x 1 = $25.49</li>
           </ul>
-          <h4 className="mt-3">Total: ${totalAmount.toFixed(2)}</h4>
+          <h4 className="mt-3">Total: ${calculateTotalPrice().toFixed(2)}</h4>
         </div>
         <div className="col-md-6">
           <h3>Shipping Details</h3>
@@ -95,7 +131,7 @@ const CheckoutPage = () => {
                 className="form-control"
                 name="name"
                 value={formData.name}
-                onChange={handleInputChange}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
             </div>
@@ -105,7 +141,7 @@ const CheckoutPage = () => {
                 className="form-control"
                 name="address"
                 value={formData.address}
-                onChange={handleInputChange}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 required
               ></textarea>
             </div>
@@ -116,7 +152,7 @@ const CheckoutPage = () => {
                 className="form-control"
                 name="email"
                 value={formData.email}
-                onChange={handleInputChange}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
               />
             </div>
@@ -130,8 +166,8 @@ const CheckoutPage = () => {
         <h3>Complete Payment</h3>
         <Checkout
           orderId="TEMP_ORDER_ID"
-          totalAmount={totalAmount}
-          userPhoneNumber={formData.phone || user?.phone || "254712345678"}
+          totalAmount={calculateTotalPrice()}
+          userPhoneNumber={user?.phone || "254712345678"}
           authToken={authToken}
         />
       </div>

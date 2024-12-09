@@ -7,8 +7,7 @@ class CategorySerializer(serializers.ModelSerializer):
     fields = [
       'id',
       'name',
-      'description',
-      'parent',
+      'description',      
       'image'
       ]
 
@@ -59,6 +58,15 @@ class OrderItemSerializer(serializers.ModelSerializer):
     model = OrderItem 
     fields = ["product", "quantity", "price"]
 
+  def validate_product(self, value):
+        """
+        Ensure that the product exists in the database.
+        """
+        try:
+            product = Product.objects.get(id=value)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError(f"Product with id {value} does not exist.")
+        return value
 
 class OrderSerializer(serializers.ModelSerializer):
   items = OrderItemSerializer(many=True) # Nested relationship fro OrderItems

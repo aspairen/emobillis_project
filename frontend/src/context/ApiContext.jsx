@@ -38,47 +38,48 @@ const ApiProvider = ({ children }) => {
     return apiCall("get", `/shop/products/${id}/`);
   };
 
-  // const createOrder = async (orderData) => {
-  //   const token = localStorage.getItem("authToken"); // Adjust based on where you store the token
-  
-  //   const response = await fetch(`${baseURL}/shop/orders/`, {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Token ${token}`, // Include the user's token
-  //     },
-  //     body: JSON.stringify(orderData),
-  //   });
-  
-  //   if (!response.ok) {
-  //     throw new Error("Failed to create order");
-  //   }
-  
-  //   return response.json();
-  // };
-  
   const createOrder = async (orderData) => {
-    const token = JSON.parse(localStorage.getItem("authToken")); // Parse token from string
-    console.log("Retrieved Token:", token); // Debugging to check if token is retrieved correctly
+    try {
+      // Retrieve the authToken from localStorage
+      const token = JSON.parse(localStorage.getItem("authToken"));
+      
+      // Check if token exists, else throw an error
+      if (!token) {
+        throw new Error("No authentication token found. Please log in again.");
+      }
   
-    if (!token) {
-      throw new Error("No authentication token found");
+      // Make the POST request to create the order
+      const response = await fetch(`${baseURL}/shop/orders/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,  // Send the token in the header
+        },
+        body: JSON.stringify(orderData),  // Pass the order data in the body
+      });
+  
+      // If the response is not OK, throw an error with the response message
+      if (!response.ok) {
+        const errorMessage = await response.text();  // Read response as text in case it's not JSON
+        throw new Error(errorMessage || "Failed to create order. Please try again.");
+      }
+  
+      // If successful, return the response data as JSON
+      return await response.json();
+      
+    } catch (error) {
+      // Log the error to the console for debugging
+      console.error("Error creating order:", error);
+      
+      // Optionally, you can add a check here to handle specific error types (e.g., expired token)
+      if (error.message.includes("authentication token")) {
+        // Redirect the user to login if token is missing or invalid
+        // navigate("/login");  // Uncomment if you want to redirect
+      }
+  
+      // Rethrow the error for higher-level handling (e.g., in the UI)
+      throw error;
     }
-  
-    const response = await fetch(`${baseURL}/shop/orders/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // Ensure proper token format
-      },
-      body: JSON.stringify(orderData),
-    });
-  
-    if (!response.ok) {
-      throw new Error("Failed to create order");
-    }
-  
-    return response.json();
   };
   
 

@@ -36,7 +36,7 @@ const AuthProvider = ({ children }) => {
     const fetchUser = async () => {
       if (authToken && !isTokenExpired(authToken)) {
         try {
-          const response = await axios.get("http://127.0.0.1:8000/api/auth/user/", {
+          const response = await axios.get("http://127.0.0.1:8000/api/auth/profile/", {
             headers: { Authorization: `Bearer ${authToken}` },
           });
           setUser(response.data);
@@ -74,6 +74,7 @@ const AuthProvider = ({ children }) => {
 
   const parseJwt = (token) => {
     try {
+// sourcery skip: inline-immediately-returned-variable
       const payload = JSON.parse(atob(token.split(".")[1]));
       return payload; // Decoded payload
     } catch (error) {

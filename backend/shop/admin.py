@@ -4,8 +4,8 @@ from .models import Product, Order, Category, Cart, OrderItem, CartItem
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description', 'parent', 'image')
-    search_fields = ('name',)
+    list_display = ('name', 'description', 'image')
+    search_fields = ('name', 'description')
     ordering = ('name',)
 
 @admin.register(Product)

@@ -3,7 +3,7 @@ const HeroSection = () => {
       <header
         className="py-5 text-center text-light"
         style={{
-          backgroundImage: "url('https://via.placeholder.com/1200x600')",
+          backgroundImage: 'url(/images/images.jpeg)',
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
